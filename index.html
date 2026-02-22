@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HobbyArmory Admin</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2e3147;
+      --accent: #6c63ff;
+      --accent-hover: #857dff;
+      --text: #e8e9f0;
+      --muted: #7a7d99;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 40px; width: 380px;
+    }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .login-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; }
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.1rem; }
+    .main { max-width: 1000px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── STAT CARDS ── */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+    }
+    .stat-card .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin-top: 6px; color: var(--accent); }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px;
+    }
+    .panel h2 { font-size: 1rem; margin-bottom: 18px; }
+
+    /* ── FORM ELEMENTS ── */
+    .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+    label { font-size: 0.8rem; color: var(--muted); }
+    input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; color: var(--text); font-size: 0.95rem; outline: none; width: 100%;
+    }
+    input:focus { border-color: var(--accent); }
+    input[type=number] { -moz-appearance: textfield; }
+    button {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 10px 20px; cursor: pointer; font-size: 0.9rem; font-weight: 600; white-space: nowrap;
+      transition: background .15s;
+    }
+    button:hover { background: var(--accent-hover); }
+    button.secondary {
+      background: transparent; border: 1px solid var(--border); color: var(--text);
+    }
+    button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+    button.danger { background: var(--error); }
+
+    /* ── RESULT BOX ── */
+    .result {
+      margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 0.9rem; display: none;
+    }
+    .result.ok  { background: #14532d44; border: 1px solid #22c55e55; color: var(--success); display: block; }
+    .result.err { background: #7f1d1d44; border: 1px solid #ef444455; color: var(--error); display: block; }
+    .result.info{ background: #1e1b4b44; border: 1px solid #6c63ff55; color: #a5b4fc; display: block; }
+
+    /* ── USER TABLE ── */
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.88rem; }
+    th { text-align: left; padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border)22; }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge.num { background: #1e1b4b; color: #a5b4fc; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>⚔️ HobbyArmory Admin</h1>
+    <p>Sign in with your admin account</p>
+    <div class="field" style="margin-bottom:12px">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" />
+    </div>
+    <div class="field" style="margin-bottom:20px">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" />
+    </div>
+    <button id="login-btn" style="width:100%">Sign In</button>
+    <div id="login-error" class="result err" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div id="dashboard">
+  <header>
+    <h1>⚔️ HobbyArmory Admin</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="admin-email" style="font-size:0.85rem;color:var(--muted)"></span>
+      <button class="secondary" id="logout-btn">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- STAT CARDS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="label">Total Users</div>
+        <div class="value" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Latest User #</div>
+        <div class="value" id="stat-latest">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Signed in as</div>
+        <div class="value" style="font-size:1rem;padding-top:8px" id="stat-admin">Admin</div>
+      </div>
+    </div>
+
+    <!-- SEARCH USER -->
+    <div class="panel">
+      <h2>🔍 Find User</h2>
+      <div class="row">
+        <div class="field">
+          <label>Search by Email</label>
+          <input type="email" id="search-email" placeholder="user@example.com" />
+        </div>
+        <button id="search-email-btn">Search</button>
+        <div class="field">
+          <label>Search by User #</label>
+          <input type="number" id="search-number" placeholder="42" min="1" />
+        </div>
+        <button id="search-number-btn">Search</button>
+      </div>
+      <div id="search-result" class="result"></div>
+      <div id="search-table-wrap"></div>
+    </div>
+
+    <!-- GRANT PROMO BY EMAIL -->
+    <div class="panel">
+      <h2>🎁 Grant Promo to One User</h2>
+      <div class="row">
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="promo-email" placeholder="user@example.com" />
+        </div>
+        <div class="field" style="max-width:180px">
+          <label>Entitlement ID</label>
+          <input type="text" id="promo-email-ent" placeholder="premium" value="premium" />
+        </div>
+        <div class="field" style="max-width:130px">
+          <label>Days</label>
+          <input type="number" id="promo-email-days" placeholder="30" value="30" min="1" />
+        </div>
+        <button id="promo-email-btn">Grant</button>
+      </div>
+      <div id="promo-email-result" class="result"></div>
+    </div>
+
+    <!-- GRANT PROMO BY NUMBER RANGE -->
+    <div class="panel">
+      <h2>🚀 Grant Promo to Early Adopters</h2>
+      <div class="row">
+        <div class="field" style="max-width:160px">
+          <label>Users #1 through...</label>
+          <input type="number" id="promo-range-max" placeholder="500" min="1" />
+        </div>
+        <div class="field" style="max-width:180px">
+          <label>Entitlement ID</label>
+          <input type="text" id="promo-range-ent" placeholder="premium" value="premium" />
+        </div>
+        <div class="field" style="max-width:130px">
+          <label>Days</label>
+          <input type="number" id="promo-range-days" placeholder="30" value="30" min="1" />
+        </div>
+        <button id="promo-range-btn">Grant to All</button>
+      </div>
+      <div id="promo-range-result" class="result"></div>
+    </div>
+
+    <!-- RECENT USERS -->
+    <div class="panel">
+      <h2>👥 Recent Signups</h2>
+      <button id="load-recent-btn">Load Last 20 Users</button>
+      <div id="recent-result" class="result"></div>
+      <div id="recent-table-wrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ FIREBASE + LOGIC ═══════════════ -->
+<script type="module">
+  import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, orderBy, limit, getDocs, doc, getDoc }
+                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFunctions, httpsCallable }
+                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+  // ─── 🔧 YOUR CONFIG (replace these 3 values) ───────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDUusKHas67yv0Ob60mtFwPhV1DABLpBXg",
+    authDomain:        "warmorycollectiontracker.firebaseapp.com",
+    projectId:         "warmorycollectiontracker",
+    storageBucket:     "warmorycollectiontracker.firebasestorage.app",
+    messagingSenderId: "1068093756683",
+    appId:             "1:1068093756683:web:d30dee59caf8575c7d7e0e",
+  };
+  const FUNCTIONS_REGION = "europe-west1"; // must match your deployed region
+  // ────────────────────────────────────────────────────────────────────────────
+
+  const app       = initializeApp(firebaseConfig);
+  const auth      = getAuth(app);
+  const db        = getFirestore(app);
+  const functions = getFunctions(app, FUNCTIONS_REGION);
+
+  // Callable functions (defined in your index.ts)
+  const grantByEmail  = httpsCallable(functions, "grantPromoByEmail");
+  const grantByRange  = httpsCallable(functions, "grantPromoToEarlyAdopters");
+
+  // ── Auth State ──────────────────────────────────────────────────────────────
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("dashboard").style.display    = "block";
+      document.getElementById("admin-email").textContent    = user.email;
+      document.getElementById("stat-admin").textContent     = user.email.split("@")[0];
+      loadStats();
+    } else {
+      document.getElementById("login-screen").style.display = "flex";
+      document.getElementById("dashboard").style.display    = "none";
+    }
+  });
+
+  // ── Login ───────────────────────────────────────────────────────────────────
+  document.getElementById("login-btn").addEventListener("click", async () => {
+    const email    = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+    const errEl    = document.getElementById("login-error");
+    errEl.style.display = "none";
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      errEl.textContent    = e.message;
+      errEl.style.display  = "block";
+    }
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+
+  // ── Load Stats ──────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const counterDoc = await getDoc(doc(db, "meta", "userCounter"));
+      const total = counterDoc.exists() ? counterDoc.data().count : "?";
+      document.getElementById("stat-total").textContent  = total;
+      document.getElementById("stat-latest").textContent = total;
+    } catch (e) {
+      document.getElementById("stat-total").textContent = "—";
+    }
+  }
+
+  // ── Search by Email ─────────────────────────────────────────────────────────
+  document.getElementById("search-email-btn").addEventListener("click", async () => {
+    const email = document.getElementById("search-email").value.trim();
+    if (!email) return;
+    showResult("search-result", "info", "Searching...");
+    try {
+      const q    = query(collection(db, "users"), where("email", "==", email), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        showResult("search-result", "err", "No user found with that email.");
+        document.getElementById("search-table-wrap").innerHTML = "";
+      } else {
+        showResult("search-result", "ok", `Found ${snap.size} user(s).`);
+        renderTable("search-table-wrap", snap.docs);
+      }
+    } catch (e) { showResult("search-result", "err", e.message); }
+  });
+
+  // ── Search by Number ────────────────────────────────────────────────────────
+  document.getElementById("search-number-btn").addEventListener("click", async () => {
+    const num = parseInt(document.getElementById("search-number").value);
+    if (!num) return;
+    showResult("search-result", "info", "Searching...");
+    try {
+      const q    = query(collection(db, "users"), where("userNumber", "==", num), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        showResult("search-result", "err", `No user found with number #${num}.`);
+        document.getElementById("search-table-wrap").innerHTML = "";
+      } else {
+        showResult("search-result", "ok", `Found user #${num}.`);
+        renderTable("search-table-wrap", snap.docs);
+      }
+    } catch (e) { showResult("search-result", "err", e.message); }
+  });
+
+  // ── Grant Promo by Email ────────────────────────────────────────────────────
+  document.getElementById("promo-email-btn").addEventListener("click", async () => {
+    const email = document.getElementById("promo-email").value.trim();
+    const ent   = document.getElementById("promo-email-ent").value.trim();
+    const days  = parseInt(document.getElementById("promo-email-days").value);
+    if (!email || !ent || !days) return;
+    showResult("promo-email-result", "info", "Granting...");
+    try {
+      const res = await grantByEmail({ email, entitlementId: ent, durationDays: days });
+      showResult("promo-email-result", "ok", `✅ Granted ${days} days of "${ent}" to ${email} (UID: ${res.data.uid})`);
+    } catch (e) { showResult("promo-email-result", "err", e.message); }
+  });
+
+  // ── Grant Promo by Range ────────────────────────────────────────────────────
+  document.getElementById("promo-range-btn").addEventListener("click", async () => {
+    const max  = parseInt(document.getElementById("promo-range-max").value);
+    const ent  = document.getElementById("promo-range-ent").value.trim();
+    const days = parseInt(document.getElementById("promo-range-days").value);
+    if (!max || !ent || !days) return;
+    if (!confirm(`Grant ${days} days of "${ent}" to users #1–#${max}? This cannot be undone.`)) return;
+    showResult("promo-range-result", "info", `Granting to users #1–#${max}... this may take a moment.`);
+    try {
+      const res = await grantByRange({ maxUserNumber: max, entitlementId: ent, durationDays: days });
+      showResult("promo-range-result", "ok", `✅ Granted to ${res.data.granted} users.`);
+    } catch (e) { showResult("promo-range-result", "err", e.message); }
+  });
+
+  // ── Load Recent Users ───────────────────────────────────────────────────────
+  document.getElementById("load-recent-btn").addEventListener("click", async () => {
+    showResult("recent-result", "info", "Loading...");
+    try {
+      const q    = query(collection(db, "users"), orderBy("userNumber", "desc"), limit(20));
+      const snap = await getDocs(q);
+      showResult("recent-result", "ok", `Showing ${snap.size} most recent users.`);
+      renderTable("recent-table-wrap", snap.docs);
+    } catch (e) { showResult("recent-result", "err", e.message); }
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function showResult(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = `result ${type}`;
+    el.textContent = msg;
+  }
+
+  function renderTable(wrapperId, docs) {
+    const rows = docs.map(d => {
+      const data = d.data();
+      const date = data.createdAt?.toDate?.()?.toLocaleDateString("de-DE") ?? "—";
+      return `<tr>
+        <td><span class="badge num">#${data.userNumber ?? "—"}</span></td>
+        <td>${data.email ?? "—"}</td>
+        <td style="color:var(--muted);font-size:0.82rem">${d.id}</td>
+        <td style="color:var(--muted)">${date}</td>
+      </tr>`;
+    }).join("");
+
+    document.getElementById(wrapperId).innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Email</th><th>UID</th><th>Joined</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+</script>
+</body>
+</html>
